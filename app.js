@@ -89,6 +89,7 @@ function loadSport(sport) {
     geojsonLayer = L.geoJson(data, { style: styleFeature, onEachFeature }).addTo(map);
     map.fitBounds(geojsonLayer.getBounds());
     updateLegend();
+    loadCompetitorSites(sport);
 }
 
 // Populate sport dropdown
@@ -109,6 +110,83 @@ function initSportSelector() {
     });
 }
 
+// Sport Colors for Competitor Sites
+const sportColors = {
+    'Athletics': '#e41a1c',
+    'Australian Football': '#ff7f00',
+    'Basketball': '#984ea3',
+    'Bowls': '#4daf4a',
+    'Cricket': '#377eb8',
+    'Soccer': '#ffff33',
+    'Netball': '#f781bf',
+    'Tennis': '#a65628',
+    'Volleyball': '#999999'
+};
+
+// Competitor Sites Layer
+const sitesLayer = L.layerGroup();
+let allSiteMarkers = [];
+
+// Map sport names from CSV format to competitor data format
+function mapSportName(sportFromCSV) {
+    const sportMapping = {
+        'AustralianFootball': 'Australian Football',
+        'Athletics': 'Athletics',
+        'Basketball': 'Basketball',
+        'Bowls': 'Bowls',
+        'Cricket': 'Cricket',
+        'Hockey': 'Hockey',
+        'Netball': 'Netball',
+        'Soccer': 'Soccer',
+        'Tennis': 'Tennis',
+        'Volleyball': 'Volleyball'
+    };
+    return sportMapping[sportFromCSV] || sportFromCSV;
+}
+
+// Create Custom Icon Function
+function createSiteIcon(color) {
+    return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+}
+
+// Load Competitor Sites (only for current sport)
+function loadCompetitorSites(sport) {
+    sitesLayer.clearLayers();
+    allSiteMarkers = [];
+
+    const mappedSport = mapSportName(sport);
+
+    if (typeof competitorSites !== 'undefined') {
+        competitorSites.forEach(site => {
+            if (site.lat && site.long && site.sport === mappedSport) {
+                const color = sportColors[site.sport] || '#000000';
+                const marker = L.marker([site.lat, site.long], {
+                    icon: createSiteIcon(color)
+                });
+
+                marker.bindPopup(`
+                    <strong>${site.sitename || 'Unknown Site'}</strong><br>
+                    Sport: ${site.sport}
+                `);
+
+                allSiteMarkers.push(marker);
+                marker.addTo(sitesLayer);
+            }
+        });
+
+        // Check if checkbox is checked
+        const showSitesCheckbox = document.getElementById('showSites');
+        if (showSitesCheckbox && showSitesCheckbox.checked) {
+            sitesLayer.addTo(map);
+        }
+    }
+}
+
 // Layer toggle listeners
 function initLayerToggle() {
     document.querySelectorAll('input[name="demandLayer"]').forEach(r => {
@@ -117,6 +195,18 @@ function initLayerToggle() {
             updateLegend();
         });
     });
+
+    // Sites toggle listener
+    const showSitesCheckbox = document.getElementById('showSites');
+    if (showSitesCheckbox) {
+        showSitesCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                sitesLayer.addTo(map);
+            } else {
+                map.removeLayer(sitesLayer);
+            }
+        });
+    }
 }
 
 // Initialise everything after data script loads
