@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Sport Facilities Map - City of Playford</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="sites_map.css" />
+</head>
+
+<body>
+    <h1>Sport Facilities Map – City of Playford</h1>
+    <div class="container">
+        <div class="sidebar">
+            <h3>Filter Sports</h3>
+            <div class="filter-controls" id="sportFilters">
+                <!-- Checkboxes will be generated here -->
+            </div>
+            <div class="legend-info">
+                <h4>Legend</h4>
+                <div class="legend-item"><span class="sa1-box"></span> SA1 Boundary</div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="sites_sa1_boundaries.js"></script>
+    <script src="competitor_sites.js"></script>
+    <script src="sites_map.js"></script>
+</body>
+
+</html>
