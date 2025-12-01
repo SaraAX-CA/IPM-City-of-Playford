@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Sport Demand Map Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <h1>Sport Demand Map – City of Playford</h1>
+    <div class="controls">
+        <label for="sportSelect">Select Sport:</label>
+        <select id="sportSelect"></select>
+        <div class="layerToggle">
+            <input type="radio" id="organised" name="demandLayer" value="OrganisedDemand_2025" checked />
+            <label for="organised">Organised (2025)</label>
+            <input type="radio" id="casual" name="demandLayer" value="CasualDemand_2025" />
+            <label for="casual">Casual (2025)</label>
+        </div>
+        <div class="layerToggle" style="margin-left: 1rem; border-left: 1px solid #ccc; padding-left: 1rem;">
+            <input type="checkbox" id="showSites" checked />
+            <label for="showSites">Show Facilities</label>
+        </div>
+    </div>
+    <div id="map" style="height: 80vh; width: 100%;"></div>
+    <div id="legend" class="legend"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="sports_data.js"></script>
+    <script src="competitor_sites.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
