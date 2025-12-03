@@ -21,10 +21,11 @@ function getColor(value, type) {
                     value > 5 ? '#bdd7e7' : '#eff3ff';
     } else {
         // Casual demand – orange palette
-        return value > 20 ? '#a63603' :
-            value > 15 ? '#e6550d' :
-                value > 10 ? '#fd8d3c' :
-                    value > 5 ? '#fdbe85' : '#feedde';
+        return value > 50 ? '#7f2704' :
+            value > 40 ? '#a63603' :
+                value > 30 ? '#e6550d' :
+                    value > 20 ? '#fd8d3c' :
+                        value > 10 ? '#fdbe85' : '#feedde';
     }
 }
 
@@ -56,6 +57,7 @@ function onEachFeature(feature, layer) {
     const p = feature.properties;
     const content = `
     <div class="popup-header">SA1: ${p.SA1_CODE21 || p.Level0_Identifier}</div>
+    <div class="popup-header">SA2: ${p.SA2_NAME21 || 'N/A'}</div>
     <div class="popup-body">
       <div class="popup-stat"><span class="popup-label">Organised Demand (2025)</span><span class="popup-value">${p.OrganisedDemand_2025 || 0}</span></div>
       <div class="popup-stat"><span class="popup-label">Casual Demand (2025)</span><span class="popup-value">${p.CasualDemand_2025 || 0}</span></div>
@@ -71,7 +73,7 @@ function onEachFeature(feature, layer) {
 function updateLegend() {
     const type = document.querySelector('input[name="demandLayer"]:checked').value;
     const legend = document.getElementById('legend');
-    const grades = [0, 5, 10, 15, 20];
+    const grades = type === 'OrganisedDemand_2025' ? [0, 5, 10, 15, 20] : [0, 10, 20, 30, 40, 50];
     let html = '<h4>Legend</h4>';
     for (let i = 0; i < grades.length; i++) {
         html += `<div class="legend-item"><i style="background:${getColor(grades[i] + 1, type)}"></i><span>${grades[i]}${grades[i + 1] ? '&ndash;' + grades[i + 1] : '+'}</span></div>`;
