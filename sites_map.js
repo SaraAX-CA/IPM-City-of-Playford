@@ -32,7 +32,8 @@ if (typeof sa1Boundaries !== 'undefined') {
         },
         onEachFeature: function (feature, layer) {
             const id = feature.properties.SA1_CODE21 || feature.properties.Level0_Identifier;
-            layer.bindPopup(`SA1: ${id}`);
+            const sa2 = feature.properties.SA2_NAME21 || 'N/A';
+            layer.bindPopup(`<div class="popup-header">SA1: ${id}</div><div class="popup-header">SA2: ${sa2}</div>`);
         }
     }).addTo(map);
 } else {
