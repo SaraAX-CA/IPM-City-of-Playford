@@ -11,6 +11,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 
 let geojsonLayer = null;
 let currentSport = null;
+let currentDemandType = 'OrganisedDemand_2025'; // Track current demand type for consistent styling
 
 // Helper: colour scales for organised (blue) and casual (orange)
 function getColor(value, type) {
@@ -80,7 +81,10 @@ function highlight(e) {
 }
 
 function resetHighlight(e) {
-    if (geojsonLayer) geojsonLayer.resetStyle(e.target);
+    if (geojsonLayer) {
+        // Apply the current demand type style to reset properly
+        e.target.setStyle(styleFor(currentDemandType)(e.target.feature));
+    }
 }
 
 function onEachFeature(feature, layer) {
@@ -139,6 +143,7 @@ function loadSport(sport) {
 
     // Create single geojson layer styled by the selected demand type
     const selectedType = getSelectedDemandType();
+    currentDemandType = selectedType; // Track current type for hover reset
     geojsonLayer = L.geoJson(data, { style: styleFor(selectedType), onEachFeature }).addTo(map);
 
     // Fit bounds to the data
@@ -253,6 +258,7 @@ function initLayerToggle() {
     document.querySelectorAll('input[name="demandLayer"]').forEach(r => {
         r.addEventListener('change', () => {
             const type = getSelectedDemandType();
+            currentDemandType = type; // Track the new demand type
             // Update the style of the single geojson layer and legend
             if (geojsonLayer && typeof geojsonLayer.setStyle === 'function') {
                 geojsonLayer.setStyle(styleFor(type));
