@@ -14,31 +14,62 @@ let currentSport = null;
 
 // Helper: colour scales for organised (blue) and casual (orange)
 function getColor(value, type) {
+    // Organised (2025) uses a finer low-range scale
     if (type === 'OrganisedDemand_2025') {
-        return value > 20 ? '#08519c' :
-            value > 15 ? '#3182bd' :
-                value > 10 ? '#6baed6' :
-                    value > 5 ? '#bdd7e7' : '#eff3ff';
-    } else {
-        // Casual demand – orange palette
+        return value > 15 ? '#08306b' :
+            value > 12 ? '#08519c' :
+                value > 9 ? '#3182bd' :
+                    value > 6 ? '#6baed6' :
+                        value > 3 ? '#bdd7e7' : '#eff3ff';
+    }
+
+    // Organised (2046) – extended to 25
+    if (type === 'OrganisedDemand_2046') {
+        return value > 25 ? '#08306b' :
+            value > 20 ? '#08519c' :
+                value > 15 ? '#3182bd' :
+                    value > 10 ? '#6baed6' :
+                        value > 5 ? '#bdd7e7' : '#eff3ff';
+    }
+
+    // Casual (2025) – existing orange palette
+    if (type === 'CasualDemand_2025') {
         return value > 50 ? '#7f2704' :
             value > 40 ? '#a63603' :
                 value > 30 ? '#e6550d' :
                     value > 20 ? '#fd8d3c' :
                         value > 10 ? '#fdbe85' : '#feedde';
     }
+
+    // Casual (2046) – extended to 75
+    if (type === 'CasualDemand_2046') {
+        return value > 75 ? '#7f2704' :
+            value > 60 ? '#a63603' :
+                value > 45 ? '#e6550d' :
+                    value > 30 ? '#fd8d3c' :
+                        value > 15 ? '#fdbe85' : '#feedde';
+    }
+
+    // Default fallback (treat as casual)
+    return value > 50 ? '#7f2704' :
+        value > 40 ? '#a63603' :
+            value > 30 ? '#e6550d' :
+                value > 20 ? '#fd8d3c' :
+                    value > 10 ? '#fdbe85' : '#feedde';
 }
 
-function styleFeature(feature) {
-    const type = document.querySelector('input[name="demandLayer"]:checked').value;
-    const val = feature.properties[type];
-    return {
-        fillColor: getColor(val, type),
-        weight: 1,
-        opacity: 1,
-        color: 'white',
-        dashArray: '3',
-        fillOpacity: 0.7
+// Create a style function for a specific demand property
+function styleFor(type) {
+    return function(feature) {
+        const val = feature.properties[type];
+        return {
+            fillColor: getColor(val, type),
+            weight: 1,
+            opacity: 1,
+            color: 'white',
+            dashArray: '3',
+            fillOpacity: 0.7
+        };
     };
 }
 
@@ -71,14 +102,26 @@ function onEachFeature(feature, layer) {
 }
 
 function updateLegend() {
-    const type = document.querySelector('input[name="demandLayer"]:checked').value;
+    // Accept an optional type argument so callers (overlay events) can force which legend to show
     const legend = document.getElementById('legend');
-    const grades = type === 'OrganisedDemand_2025' ? [0, 5, 10, 15, 20] : [0, 10, 20, 30, 40, 50];
+    const type = (typeof arguments[0] === 'string' && arguments[0]) ? arguments[0] : (document.querySelector('input[name="demandLayer"]:checked') ? document.querySelector('input[name="demandLayer"]:checked').value : 'OrganisedDemand_2025');
+    const grades =
+        type === 'OrganisedDemand_2025' ? [0, 3, 6, 9, 12, 15] :
+        type === 'OrganisedDemand_2046' ? [0, 5, 10, 15, 20, 25] :
+        type === 'CasualDemand_2025' ? [0, 10, 20, 30, 40, 50] :
+        /* CasualDemand_2046 */ [0, 15, 30, 45, 60, 75];
     let html = '<h4>Legend</h4>';
     for (let i = 0; i < grades.length; i++) {
         html += `<div class="legend-item"><i style="background:${getColor(grades[i] + 1, type)}"></i><span>${grades[i]}${grades[i + 1] ? '&ndash;' + grades[i + 1] : '+'}</span></div>`;
     }
     legend.innerHTML = html;
+}
+
+// Return the currently visible demand property layer, using a sensible priority
+// helper to read the selected demand radio value
+function getSelectedDemandType() {
+    const radio = document.querySelector('input[name="demandLayer"]:checked');
+    return radio ? radio.value : 'OrganisedDemand_2025';
 }
 
 function loadSport(sport) {
@@ -87,10 +130,26 @@ function loadSport(sport) {
         return;
     }
     const data = sportsData[sport];
-    if (geojsonLayer) map.removeLayer(geojsonLayer);
-    geojsonLayer = L.geoJson(data, { style: styleFeature, onEachFeature }).addTo(map);
-    map.fitBounds(geojsonLayer.getBounds());
-    updateLegend();
+
+    // Remove previous geojson layer
+    if (geojsonLayer) {
+        try { map.removeLayer(geojsonLayer); } catch (e) {}
+        geojsonLayer = null;
+    }
+
+    // Create single geojson layer styled by the selected demand type
+    const selectedType = getSelectedDemandType();
+    geojsonLayer = L.geoJson(data, { style: styleFor(selectedType), onEachFeature }).addTo(map);
+
+    // Fit bounds to the data
+    try {
+        map.fitBounds(geojsonLayer.getBounds());
+    } catch (e) {
+        // ignore if getBounds fails
+    }
+
+    // Update legend for current selection
+    updateLegend(selectedType);
     loadCompetitorSites(sport);
 }
 
@@ -193,8 +252,12 @@ function loadCompetitorSites(sport) {
 function initLayerToggle() {
     document.querySelectorAll('input[name="demandLayer"]').forEach(r => {
         r.addEventListener('change', () => {
-            if (geojsonLayer) geojsonLayer.setStyle(styleFeature);
-            updateLegend();
+            const type = getSelectedDemandType();
+            // Update the style of the single geojson layer and legend
+            if (geojsonLayer && typeof geojsonLayer.setStyle === 'function') {
+                geojsonLayer.setStyle(styleFor(type));
+            }
+            updateLegend(type);
         });
     });
 
